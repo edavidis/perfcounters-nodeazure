@@ -1,0 +1,33 @@
+{
+  "name": "perfcounters-nodeazure",
+  "version": "1.0.0",
+  "author": {
+    "name": "Emilio Davidis",
+    "url": "edavidis@gmail.com"
+  },
+  "description": "Windows perfmon counters save in azure storage table",
+  "keywords": "perfmon performance azure WADPerformanceCountersTable",
+  "homepage": "https://github.com/edavidis/perfcounters-nodeazure",
+  "bugs": "https://github.com/edavidis/perfcounters-nodeazure/issues",
+  "main": "./index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/edavidis/perfcounters-nodeazure.git"
+  },
+  "os": [
+    "win32"
+  ],
+  "engines": {
+    "node": ">=0.6.0"
+  },
+  "scripts": {
+    "test": "node test/test.js"
+  },
+  "readmeFilename": "README.md",
+  "dependencies": {
+    "azure": ">=0.6.5",
+    "perfmon": ">= 0.2.0"
+  }
+}
+
+
