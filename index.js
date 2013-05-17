@@ -3,27 +3,54 @@ var perfmon = require('perfmon');
 
 module.exports = PerfCountersToAzure;
 
-function PerfCountersToAzure(roleDeploymentID, roleName, roleInstanceID) {
+var saveToAzure = true;
 
-	tself._roleDeploymentID = roleDeploymentID;
+function PerfCountersToAzure(roleDeploymentID, roleName, roleInstanceID, azureStorageAccount, azureStorageAccessKey, saveToAzureInterval) {
+
+	this._roleDeploymentID = roleDeploymentID;
 	this._roleName = roleName;
 	this._roleInstanceID = roleInstanceID;
 
+	this._azureStorageAccount = azureStorageAccount;
+	this._azureStorageAccessKey = azureStorageAccessKey;
+
 	this._counters = new Array();
 
+	this._saveToAzureInterval = saveToAzureInterval || 30000;
+
+	var self = this;
+
+	setTimeout(function () {
+
+		self._saveCountersToAzure(self);
+
+	}, self._saveToAzureInterval);
 }
 
 PerfCountersToAzure.prototype = {
 
-	readCounters: function(counters, interval) {
+	setSaveToAzureInterval: function(intervalInMilliseconds) {
+		this._saveToAzureInterval = intervalInMilliseconds;
+	},
 
+	stop: function() {
+
+		perfmon.stop();
+		saveToAzure = false;
+
+	},
+
+	readCounters: function(counters, intervalInSecodns) {
+
+		
+		
 		var count = 0;
 		var self = this;
 
 		perfmon(counters, function (err, data) {
-
+			
 			++count;
-			if (count == interval) { 
+			if (count == intervalInSecodns) { 
 
 				count = 0;
 				var count3 = 0;
@@ -53,9 +80,9 @@ PerfCountersToAzure.prototype = {
 
 	},
 
-	saveToAzure: function (azureStorageAccount, azureStorageAccessKey) {
+	_saveCountersToAzure: function (scope) {
 
-	    var tableService = azure.createTableService(azureStorageAccount, azureStorageAccessKey);
+		 var tableService = azure.createTableService(scope._azureStorageAccount, scope._azureStorageAccessKey);
 
 	    tableService.createTableIfNotExists('WADPerformanceCountersTable', function (error) {
 	        if (!error) {
@@ -63,8 +90,8 @@ PerfCountersToAzure.prototype = {
 	        }
 	    });
 
-	    var arr = this._counters.slice(0);
-	    this._counters.length = 0;
+	    var arr = scope._counters.slice(0);
+	    scope._counters.length = 0;
 
 	    var tick = ((new Date().getTime() * 10000) + 621355968000000000);
 	    var pkey = '0' + tick.toString();
@@ -73,12 +100,22 @@ PerfCountersToAzure.prototype = {
 
 	        row = arr[index];
 	        row.PartitionKey = pkey;
+	        
 	        tableService.insertEntity('WADPerformanceCountersTable', row, function (error) {
 	            if (!error) {
 	                // Entity inserted
 	            }
 	        });
 	    }
+
+	    if (saveToAzure) {
+
+	    	setTimeout(function() {
+	    		scope._saveCountersToAzure(scope);
+	    	}, scope._saveToAzureInterval);
+
+	    } 
+	    	
 
 	}
 
